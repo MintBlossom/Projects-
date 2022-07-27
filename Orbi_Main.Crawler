@@ -1,0 +1,36 @@
+import requests, re
+
+url = "https://orbi.kr/"
+response = requests.get(url)
+page = response.text
+
+main_articles = re.findall('<span>(.+)</span>', page)
+
+members = re.findall('<strong>(\d{7,})</strong>', page)
+
+orbi_cast = "<<오르비 캐스트>> \n" # 오르비 소속 저자나, 유명 강사, 또는 오르비 전체 공지의 제목을 추출
+for i in range (0,5):
+    main_article = main_articles[i]
+    main_article = re.sub("&[^;]+;", '', main_article) # HTML의 특수문자가 대부분 &#~~;의 형태라는 점에서 착안
+    orbi_cast += f'{i+1} , {main_article} \n'
+
+orbi_recommend = "<<오늘의 추천 글>> \n" # 오르비 유저가 작성한 글 중, 추천을 받아 추천 글에 올라간 글의 제목을 추출
+for i in range (5,12):
+    main_article = main_articles[i]
+    main_article = re.sub("&[^;]+;", '', main_article)
+    orbi_recommend += f'{i-4} , {main_article} \n'
+
+chain = ['BCH', 'ETC', 'BTC', 'ETH', 'BSV'] # 블록체인에 디지털 공증을 할 때, 사용할 수 있는 암호화폐의 종류
+orbi_blockchain = "<<블록체인에 디지털 공증된 글의 수>> \n"
+for i in range (11,16):
+    main_article = main_articles[i+1]
+    main_article = re.sub(",", '', main_article) # 오르비에서는 숫자를 세 단위씩 끊어 (ex. 123,456) 표시하는데 CSV에서는 콤마로 인해 다른 셀로 인식되는 문제가 있었습니다. 그래서 이 부분을 삽입했습니다.
+    orbi_blockchain += f'{chain[i-11]} , {main_article} \n'
+
+fh = open('ORBI.csv', 'a', encoding='euc-kr') # a 옵션 (append)를 사용하면 문서에 계속적으로 이어붙이는 형태로 생성
+# Excel이 켜진 상태에서는, 이 행에서 Permission Denied 오류가 발생
+fh.write(orbi_cast)
+fh.write(orbi_recommend)
+fh.write(orbi_blockchain)
+fh.write(f'지금 오르비에 가입하시면 당신의 IMIN은 {str(members)} 입니다.')
+fh.close()
